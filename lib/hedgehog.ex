@@ -1,18 +1,33 @@
 defmodule Hedgehog do
-  @moduledoc """
-  Documentation for `Hedgehog`.
-  """
+  defdelegate child_spec(options), to: Hedgehog.Supervisor
 
-  @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> Hedgehog.hello()
-      :world
-
-  """
-  def hello do
-    :world
-  end
+  @opts_schema [
+    datacenter: [
+      type: :string,
+      default: "eu"
+    ],
+    distribution_id: [
+      type: :string,
+      required: true
+    ],
+    distribution_secret: [
+      type: :string,
+      required: true
+    ],
+    locales: [
+      type: {:list, :string},
+      required: true
+    ],
+    namespace: [
+      type: :string,
+      default: "default"
+    ],
+    fetch_interval: [
+      type: :non_neg_integer,
+      default: 600_000
+    ],
+    otp_app: [
+      type: :atom
+    ]
+  ]
 end
