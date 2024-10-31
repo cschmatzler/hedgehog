@@ -4,24 +4,30 @@ defmodule Hedgehog.Analytics do
   use Broadway
 
   alias Broadway.Message
-  alias Hedgehog.Client
   alias Hedgehog.Analytics.Producer
+  alias Hedgehog.Client
 
   require Logger
 
-  @enabled? Application.compile_env(:leuchtturm, [Leuchtturm.Analytics, :enabled?], false)
+  @enabled Application.compile_env(:hedgehog, [:analytics, :enabled], false)
 
-  def start_link(_opts) do
+  def start_link(options) do
+    {broadway, producer} = Keyword.split(options, [:batch_size, :batch_timeout])
+
     Broadway.start_link(__MODULE__,
       name: __MODULE__,
       producer: [
-        module: {Producer, []}
+        module: {Producer, producer}
       ],
       processors: [
         default: [concurrency: 50]
       ],
       batchers: [
-        posthog: [concurrency: 5, batch_size: 500, batch_timeout: 60_000]
+        posthog: [
+          concurrency: 5,
+          batch_size: Keyword.fetch!(broadway, :batch_size),
+          batch_timeout: Keyword.fetch!(broadway, :batch_timeout)
+        ]
       ]
     )
   end
@@ -43,25 +49,26 @@ defmodule Hedgehog.Analytics do
     end
   end
 
-  defmacro event(event_name, metadata) do
-    if @enabled? do
-      quote do
-        :telemetry.execute(
-          [:leuchtturm, :analytics, unquote(event_name)],
-          %{},
-          unquote(metadata)
-        )
-      end
-    else
-      quote do
-        _ = fn -> {unquote(event_name), unquote(metadata)} end
-        :ok
-      end
-    end
-  end
+  if @enabled do
+    def event(event, user, metadata) do
+      IO.puts("doing something")
 
-  def identify_workspace(%{id: id, name: name, slug: slug}, opts \\ []) do
-    if @enabled?,
-      do: Task.start(fn -> Client.identify_workspace(%{id: id, name: name, slug: slug}, opts) end)
+      :telemetry.execute(
+        [:hedgehog, :analytics, :event],
+        %{},
+        %{event: event, user: user, metadata: metadata}
+      )
+    end
+
+    def identify_group(group, metadata, opts \\ []) do
+      Task.start(fn -> Client.identify_group(group, metadata, opts) end)
+    end
+  else
+    def event(_event, _metadata, _actor) do
+      IO.puts("doing nothing")
+      :ok
+    end
+
+    def identify_workspace(_workspace, _opts), do: :ok
   end
 end

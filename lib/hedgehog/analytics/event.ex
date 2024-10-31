@@ -1,13 +1,14 @@
 defmodule Hedgehog.Analytics.Event do
+  @moduledoc false
   @derive Jason.Encoder
   defstruct [:event, :properties, :distinct_id, :timestamp]
 
-  def from_telemetry_event(event_name, measurements, metadata) do
-    event_name = event_name |> Enum.drop(2) |> Enum.join(".")
+  def from_telemetry_event(_event, measurements, metadata) do
+    {event, metadata} = Map.pop(metadata, :event)
     {actor, metadata} = Map.pop(metadata, :actor)
 
     %__MODULE__{
-      event: event_name,
+      event: event,
       distinct_id: distinct_id(actor),
       properties: build_properties(measurements, metadata),
       timestamp: DateTime.to_iso8601(DateTime.utc_now())
@@ -29,6 +30,5 @@ defmodule Hedgehog.Analytics.Event do
 
   defp put_groups(properties, nil), do: properties
 
-  defp put_groups(properties, workspace),
-    do: Map.put(properties, "$groups", %{workspace: workspace.id})
+  defp put_groups(properties, workspace), do: Map.put(properties, "$groups", %{workspace: workspace.id})
 end

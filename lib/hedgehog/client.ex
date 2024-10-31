@@ -1,4 +1,5 @@
 defmodule Hedgehog.Client do
+  @moduledoc false
   @posthog_api_key Application.compile_env(:leuchtturm, [Leuchtturm.Analytics, :posthog_api_key])
 
   def new(opts \\ []) when is_list(opts) do

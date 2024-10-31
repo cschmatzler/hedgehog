@@ -4,10 +4,17 @@ defmodule Hedgehog.MixProject do
   def project do
     [
       app: :hedgehog,
-      version: "0.1.0",
+      description: "A Posthog SDK",
+      version: "0.0.1",
       elixir: "~> 1.17",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      package: %{
+        licenses: ["MIT"],
+        links: %{
+          "GitHub" => "https://github.com/cschmatzler/hedgehog"
+        }
+      }
     ]
   end
 
@@ -23,7 +30,9 @@ defmodule Hedgehog.MixProject do
       {:gen_stage, "~> 1.2"},
       {:jason, "~> 1.4"},
       {:req, "~> 0.5"},
-      {:nimble_options, "~> 1.1"}
+      {:nimble_options, "~> 1.1"},
+      {:styler, "~> 1.1", only: [:dev, :test], runtime: false},
+      {:ex_doc, "~> 0.34", only: :dev, runtime: false}
     ]
   end
 end

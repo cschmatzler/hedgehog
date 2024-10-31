@@ -1,4 +1,5 @@
 defmodule Hedgehog.Analytics.Producer do
+  @moduledoc false
   @behaviour Broadway.Acknowledger
   @behaviour Broadway.Producer
 
@@ -7,15 +8,11 @@ defmodule Hedgehog.Analytics.Producer do
   alias Broadway.Message
   alias Hedgehog.Analytics.Event
 
-  @telemetry_events [
-    [:leuchtturm, :analytics, :workspace_created]
-  ]
-
   @impl true
   def init(_opts) do
-    :telemetry.attach_many(
-      "analytics-producer",
-      @telemetry_events,
+    :telemetry.attach(
+      "hedgehog-analytics-producer",
+      [:hedgehog, :analytics, :event],
       &handle_event/4,
       %{pid: self()}
     )
@@ -23,8 +20,8 @@ defmodule Hedgehog.Analytics.Producer do
     {:producer, %{queue: :queue.new(), demand: 0}}
   end
 
-  defp handle_event(event_name, measurements, metadata, %{pid: pid}) do
-    event = Event.from_telemetry_event(event_name, measurements, metadata)
+  defp handle_event(event, measurements, metadata, %{pid: pid}) do
+    event = Event.from_telemetry_event(event, measurements, metadata)
     GenStage.cast(pid, {:push, event})
   end
 
