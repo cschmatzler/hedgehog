@@ -9,7 +9,7 @@ defmodule Hedgehog.Supervisor do
              ],
              domain: [
                type: :string,
-               default: "eu.i.posthog.com"
+               required: true
              ],
              api_key: [
                type: :string,
@@ -46,9 +46,12 @@ defmodule Hedgehog.Supervisor do
   @impl Supervisor
   def init(options) do
     with {:ok, options} <- NimbleOptions.validate(options, @options) do
-      children = [
-        {Hedgehog.Analytics, Keyword.get(options, :analytics, [])}
-      ]
+      children =
+        if get_in(options, [:analytics, :enabled]) do
+          [{Hedgehog.Analytics, Keyword.get(options, :analytics, [])}]
+        else
+          []
+        end
 
       Supervisor.init(children, strategy: :one_for_one)
     end

@@ -9,7 +9,7 @@ defmodule Hedgehog.Analytics.Producer do
   alias Hedgehog.Analytics.Event
 
   @impl true
-  def init(_opts) do
+  def init(_options) do
     :telemetry.attach(
       "hedgehog-analytics-producer",
       [:hedgehog, :analytics, :event],

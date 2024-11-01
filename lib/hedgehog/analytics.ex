@@ -9,8 +9,6 @@ defmodule Hedgehog.Analytics do
 
   require Logger
 
-  @enabled Application.compile_env(:hedgehog, [:analytics, :enabled], false)
-
   def start_link(options) do
     {broadway, producer} = Keyword.split(options, [:batch_size, :batch_timeout])
 
@@ -49,26 +47,15 @@ defmodule Hedgehog.Analytics do
     end
   end
 
-  if @enabled do
-    def event(event, user, metadata) do
-      IO.puts("doing something")
+  def event(event, user, metadata) do
+    :telemetry.execute(
+      [:hedgehog, :analytics, :event],
+      %{},
+      %{event: event, user: user, metadata: metadata}
+    )
+  end
 
-      :telemetry.execute(
-        [:hedgehog, :analytics, :event],
-        %{},
-        %{event: event, user: user, metadata: metadata}
-      )
-    end
-
-    def identify_group(group, metadata, opts \\ []) do
-      Task.start(fn -> Client.identify_group(group, metadata, opts) end)
-    end
-  else
-    def event(_event, _metadata, _actor) do
-      IO.puts("doing nothing")
-      :ok
-    end
-
-    def identify_workspace(_workspace, _opts), do: :ok
+  def identify_group(type, id, metadata, opts \\ []) do
+    Task.start(fn -> Client.identify_group(type, id, metadata, opts) end)
   end
 end

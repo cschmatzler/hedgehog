@@ -1,15 +1,21 @@
 defmodule Hedgehog.Client do
   @moduledoc false
-  @posthog_api_key Application.compile_env(:leuchtturm, [Leuchtturm.Analytics, :posthog_api_key])
-
-  def new(opts \\ []) when is_list(opts) do
-    [base_url: "https://eu.i.posthog.com"]
+  def new(_opts \\ []) do
+    [base_url: Application.get_env(:hedgehog, :domain)]
     |> Req.new()
-    |> Req.merge(opts)
+    |> Req.Request.append_request_steps(
+      api_key: fn req ->
+        with %{method: :post, body: body} <- req do
+          # FIXME: This is ugly?
+          body = body |> Jason.decode!() |> Map.put(:api_key, Application.get_env(:hedgehog, :api_key)) |> Jason.encode!()
+          IO.inspect(%{req | body: body})
+        end
+      end
+    )
   end
 
   def post(url, json, opts \\ []) do
-    json = Map.put(json, :api_key, @posthog_api_key)
+    json = Map.put(json, :api_key, Application.get_env(:hedgehog, :api_key))
     opts = Keyword.put(opts, :json, json)
 
     [url: url]
@@ -21,20 +27,15 @@ defmodule Hedgehog.Client do
     post("/batch", %{batch: events})
   end
 
-  def identify_workspace(%{id: id, name: name, slug: slug}, opts) do
-    actor = Keyword.get(opts, :actor)
-
+  def identify_group(type, id, metadata, _opts) do
     post("/capture", %{
       event: "$groupidentify",
-      distinct_id: actor.id,
+      distinct_id: id,
       properties: %{
-        "$group_type" => "workspace",
+        "$group_type" => type,
         "$group_key" => id,
-        "$group_set" => %{
-          name: name,
-          slug: slug
-        },
-        "$lib" => "server"
+        "$group_set" => metadata,
+        "$lib" => "hedgehog"
       }
     })
   end
