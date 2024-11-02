@@ -1,24 +1,17 @@
 defmodule Hedgehog.Client do
   @moduledoc false
-  def new(_opts \\ []) do
-    [base_url: Application.get_env(:hedgehog, :domain)]
+  alias Hedgehog.Config
+
+  def new(opts \\ []) do
+    [base_url: Config.get(:endpoint)]
     |> Req.new()
-    |> Req.Request.append_request_steps(
-      api_key: fn req ->
-        with %{method: :post, body: body} <- req do
-          # FIXME: This is ugly?
-          body = body |> Jason.decode!() |> Map.put(:api_key, Application.get_env(:hedgehog, :api_key)) |> Jason.encode!()
-          IO.inspect(%{req | body: body})
-        end
-      end
-    )
+    |> Req.merge(opts)
   end
 
   def post(url, json, opts \\ []) do
-    json = Map.put(json, :api_key, Application.get_env(:hedgehog, :api_key))
-    opts = Keyword.put(opts, :json, json)
+    json = Map.put(json, :api_key, Config.get(:api_key))
 
-    [url: url]
+    [url: url, json: json]
     |> new()
     |> Req.post(opts)
   end

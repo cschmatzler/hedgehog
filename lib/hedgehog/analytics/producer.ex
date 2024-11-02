@@ -20,8 +20,8 @@ defmodule Hedgehog.Analytics.Producer do
     {:producer, %{queue: :queue.new(), demand: 0}}
   end
 
-  defp handle_event(event, measurements, metadata, %{pid: pid}) do
-    event = Event.from_telemetry_event(event, measurements, metadata)
+  defp handle_event(_event, _measurements, metadata, %{pid: pid}) do
+    event = Event.from_telemetry_event(metadata)
     GenStage.cast(pid, {:push, event})
   end
 

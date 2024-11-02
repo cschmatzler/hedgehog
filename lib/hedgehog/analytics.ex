@@ -9,13 +9,11 @@ defmodule Hedgehog.Analytics do
 
   require Logger
 
-  def start_link(options) do
-    {broadway, producer} = Keyword.split(options, [:batch_size, :batch_timeout])
-
+  def start_link(_options) do
     Broadway.start_link(__MODULE__,
       name: __MODULE__,
       producer: [
-        module: {Producer, producer}
+        module: {Producer, []}
       ],
       processors: [
         default: [concurrency: 50]
@@ -23,8 +21,8 @@ defmodule Hedgehog.Analytics do
       batchers: [
         posthog: [
           concurrency: 5,
-          batch_size: Keyword.fetch!(broadway, :batch_size),
-          batch_timeout: Keyword.fetch!(broadway, :batch_timeout)
+          batch_size: Hedgehog.Config.get([:analytics, :batch_size]),
+          batch_timeout: Hedgehog.Config.get([:analytics, :batch_timeout])
         ]
       ]
     )
@@ -47,11 +45,11 @@ defmodule Hedgehog.Analytics do
     end
   end
 
-  def event(event, user, metadata) do
+  def event(event, user_id, metadata) do
     :telemetry.execute(
       [:hedgehog, :analytics, :event],
       %{},
-      %{event: event, user: user, metadata: metadata}
+      %{event: event, user_id: user_id, metadata: metadata}
     )
   end
 

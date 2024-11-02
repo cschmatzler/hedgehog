@@ -3,32 +3,12 @@ defmodule Hedgehog.Analytics.Event do
   @derive Jason.Encoder
   defstruct [:event, :properties, :distinct_id, :timestamp]
 
-  def from_telemetry_event(_event, measurements, metadata) do
-    {event, metadata} = Map.pop(metadata, :event)
-    {actor, metadata} = Map.pop(metadata, :actor)
-
+  def from_telemetry_event(%{event: event, user_id: user_id, metadata: metadata}) do
     %__MODULE__{
       event: event,
-      distinct_id: distinct_id(actor),
-      properties: build_properties(measurements, metadata),
+      distinct_id: user_id,
+      properties: Map.put(metadata, "$lib", "hedgehog"),
       timestamp: DateTime.to_iso8601(DateTime.utc_now())
     }
   end
-
-  defp distinct_id(actor) do
-    if actor, do: actor.id
-  end
-
-  defp build_properties(measurements, metadata) do
-    {workspace, metadata} = Map.pop(metadata, :workspace)
-
-    measurements
-    |> Map.merge(metadata)
-    |> Map.put("$lib", "server")
-    |> put_groups(workspace)
-  end
-
-  defp put_groups(properties, nil), do: properties
-
-  defp put_groups(properties, workspace), do: Map.put(properties, "$groups", %{workspace: workspace.id})
 end
