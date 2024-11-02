@@ -21,7 +21,15 @@ defmodule Hedgehog.Config do
                keys: [
                  enabled: [
                    type: :boolean,
-                   default: false
+                   default: true
+                 ],
+                 user_module: [
+                   type: :atom,
+                   required: true
+                 ],
+                 pageview: [
+                   type: :boolean,
+                   default: true
                  ],
                  batch_size: [
                    type: :pos_integer,

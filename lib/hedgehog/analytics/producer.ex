@@ -7,21 +7,36 @@ defmodule Hedgehog.Analytics.Producer do
 
   alias Broadway.Message
   alias Hedgehog.Analytics.Event
+  alias Hedgehog.Config
 
   @impl true
   def init(_options) do
     :telemetry.attach(
-      "hedgehog-analytics-producer",
+      "hedgehog-analytics-producer-generic",
       [:hedgehog, :analytics, :event],
-      &handle_event/4,
+      &__MODULE__.handle_event/4,
       %{pid: self()}
     )
+
+    if Config.get([:analytics, :pageview]) do
+      :telemetry.attach(
+        "hedgehog-analytics-producer-pageview",
+        [:phoenix, :live_view, :mount, :stop],
+        &__MODULE__.handle_event/4,
+        %{pid: self()}
+      )
+    end
 
     {:producer, %{queue: :queue.new(), demand: 0}}
   end
 
-  defp handle_event(_event, _measurements, metadata, %{pid: pid}) do
+  def handle_event([:hedgehog, :analytics, :event], _measurements, metadata, %{pid: pid}) do
     event = Event.from_telemetry_event(metadata)
+    GenStage.cast(pid, {:push, event})
+  end
+
+  def handle_event([:phoenix, :live_view, :mount, :stop], _measurements, metadata, %{pid: pid}) do
+    event = Event.pageview(metadata)
     GenStage.cast(pid, {:push, event})
   end
 

@@ -6,7 +6,7 @@ defmodule Hedgehog.MixProject do
       app: :hedgehog,
       description: "A Posthog SDK",
       version: "0.0.1",
-      elixir: "~> 1.17",
+      elixir: "~> 1.15",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       package: %{
@@ -31,6 +31,8 @@ defmodule Hedgehog.MixProject do
       {:jason, "~> 1.4"},
       {:req, "~> 0.5"},
       {:nimble_options, "~> 1.1"},
+      {:phoenix_live_view, "~> 1.0.0-rc.7"},
+      {:plug, "~> 1.16"},
       {:styler, "~> 1.1", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.34", only: :dev, runtime: false}
     ]
