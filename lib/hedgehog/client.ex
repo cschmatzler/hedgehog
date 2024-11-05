@@ -20,6 +20,17 @@ defmodule Hedgehog.Client do
     post("/batch", %{batch: events})
   end
 
+  def identify(user, metadata, _opts) do
+    post("/capture", %{
+      event: "$identify",
+      distinct_id: user.id,
+      properties: %{
+        "$lib" => "hedgehog",
+        "$user" => metadata
+      }
+    })
+  end
+
   def identify_group(type, id, metadata, _opts) do
     post("/capture", %{
       event: "$groupidentify",

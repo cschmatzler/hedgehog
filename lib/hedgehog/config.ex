@@ -23,7 +23,7 @@ defmodule Hedgehog.Config do
                    type: :boolean,
                    default: true
                  ],
-                 user_module: [
+                 user: [
                    type: :atom,
                    required: true
                  ],
@@ -44,7 +44,12 @@ defmodule Hedgehog.Config do
            )
 
   def start_link(options) do
-    Agent.start_link(fn -> NimbleOptions.validate!(options, @options) end, name: __MODULE__)
+    case NimbleOptions.validate(options, @options) do
+      {:ok, validated} ->
+        Agent.start_link(fn -> validated end, name: __MODULE__)
+      {:error, error} ->
+        {:error, error}
+    end
   end
 
   def get(key_or_keys, default \\ nil)
@@ -58,4 +63,6 @@ defmodule Hedgehog.Config do
   def get(key, default) when is_atom(key) do
     Agent.get(__MODULE__, fn options -> Keyword.get(options, key, default) end)
   end
+
+  def options, do: @options
 end

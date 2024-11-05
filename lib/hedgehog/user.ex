@@ -1,9 +1,11 @@
 defmodule Hedgehog.User do
   @moduledoc false
 
+  alias Phoenix.LiveView.Socket
+
   @callback id(any()) :: binary()
-  @callback groups(any()) :: map()
-  @callback from_view(%Phoenix.LiveView.Socket{} | %Plug.Conn{}) :: any()
+  @callback groups(any(), %Plug.Conn{} | %Socket{}) :: map()
+  @callback from_view(%Plug.Conn{} | %Socket{}) :: any()
 
   defmacro __using__(_) do
     quote do
@@ -15,12 +17,12 @@ defmodule Hedgehog.User do
       end
 
       @impl true
-      def groups(_user) do
+      def groups(_user, _conn_or_socket) do
         %{}
       end
 
       @impl true
-      def from_view(%Phoenix.LiveView.Socket{} = socket) do
+      def from_view(%Socket{} = socket) do
         socket.assigns.current_user
       end
 

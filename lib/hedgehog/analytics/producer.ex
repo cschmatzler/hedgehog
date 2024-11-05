@@ -5,6 +5,10 @@ defmodule Hedgehog.Analytics.Producer do
 
   use GenStage
 
+  def start_link(opts \\ []) do
+    GenStage.start_link(__MODULE__, opts)
+  end
+
   alias Broadway.Message
   alias Hedgehog.Analytics.Event
   alias Hedgehog.Config
@@ -31,17 +35,19 @@ defmodule Hedgehog.Analytics.Producer do
   end
 
   def handle_event([:hedgehog, :analytics, :event], _measurements, metadata, %{pid: pid}) do
-    event = Event.from_telemetry_event(metadata)
-    GenStage.cast(pid, {:push, event})
+    with event when not is_nil(event) <- Event.from_telemetry_event(metadata) do
+      GenStage.cast(pid, {:push, event})
+    end
   end
 
   def handle_event([:phoenix, :live_view, :mount, :stop], _measurements, metadata, %{pid: pid}) do
-    event = Event.pageview(metadata)
-    GenStage.cast(pid, {:push, event})
+    with event when not is_nil(event) <- Event.pageview(metadata) do
+      GenStage.cast(pid, {:push, event})
+    end
   end
 
   @impl true
-  def handle_cast({:push, event}, %{queue: queue, demand: demand} = state) do
+  def handle_cast({:push, event}, %{queue: queue, demand: demand} = state) when not is_nil(event) do
     queue = :queue.in(event, queue)
     dispatch_events(queue, demand, state)
   end
@@ -64,9 +70,7 @@ defmodule Hedgehog.Analytics.Producer do
 
   defp dispatch_events(queue, demand, state) do
     {events, queue, pending_demand} = take_events_from_queue(queue, demand, [])
-
-    messages =
-      Enum.map(events, &%Message{data: &1, acknowledger: {__MODULE__, :ack_id, %{pid: self()}}})
+    messages = Enum.map(events, &%Message{data: &1, acknowledger: {__MODULE__, :ack_id, %{pid: self()}}})
 
     {:noreply, messages, %{state | queue: queue, demand: pending_demand}}
   end

@@ -4,17 +4,13 @@ defmodule Hedgehog.MixProject do
   def project do
     [
       app: :hedgehog,
-      description: "A Posthog SDK",
+      description: "A Posthog SDK with extra spines",
       version: "0.0.1",
       elixir: "~> 1.15",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      package: %{
-        licenses: ["MIT"],
-        links: %{
-          "GitHub" => "https://github.com/cschmatzler/hedgehog"
-        }
-      }
+      package: package(),
+      docs: docs()
     ]
   end
 
@@ -35,6 +31,25 @@ defmodule Hedgehog.MixProject do
       {:plug, "~> 1.16"},
       {:styler, "~> 1.1", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.34", only: :dev, runtime: false}
+    ]
+  end
+
+  defp package do
+    [
+      name: "hedgehog",
+      licenses: ["MIT"],
+      maintainers: ["Christoph Schmatzler"],
+      links: %{"GitHub" => "https://github.com/cschmatzler/hedgehog"}
+    ]
+  end
+
+  defp docs do
+    [
+      main: "Hedgehog",
+      extras: ["CHANGELOG.md"] ++ Path.wildcard("guides/**"),
+      groups_for_extras: [
+        Guides: Path.wildcard("guides/**")
+      ]
     ]
   end
 end

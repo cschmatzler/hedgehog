@@ -3,19 +3,25 @@ defmodule Hedgehog.Supervisor do
   use Supervisor
 
   def start_link(options) do
-    name = Keyword.fetch!(options, :name)
+    name = Keyword.get(options, :name, Hedgehog)
     Supervisor.start_link(__MODULE__, options, name: name)
   end
 
   @impl Supervisor
   def init(options) do
-    children =
-      if get_in(options, [:analytics, :enabled]) do
-        [{Hedgehog.Config, options}, Hedgehog.Analytics]
-      else
-        [{Hedgehog.Config, options}]
-      end
+    case NimbleOptions.validate(options, Hedgehog.Config.options()) do
+      {:ok, validated} ->
+        children =
+          if get_in(validated, [:analytics, :enabled]) do
+            [{Hedgehog.Config, validated}, Hedgehog.Analytics]
+          else
+            [{Hedgehog.Config, validated}]
+          end
 
-    Supervisor.init(children, strategy: :one_for_one)
+        Supervisor.init(children, strategy: :one_for_one)
+
+      {:error, error} ->
+        {:error, {:invalid_options, error}}
+    end
   end
 end

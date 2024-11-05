@@ -14,21 +14,25 @@ defmodule Hedgehog.Analytics.Event do
     }
   end
 
+  def from_telemetry_event(_), do: nil
+
   def pageview(metadata) do
-    current_url = to_string(metadata.uri)
+    mod = Config.get([:analytics, :user])
 
-    user_module = Config.get([:analytics, :user_module])
-    user = apply(user_module, :from_view, [metadata.socket])
-    user_id = apply(user_module, :id, [user])
-
-    %__MODULE__{
-      event: "$pageview",
-      distinct_id: user_id,
-      properties: %{
-        "$current_url" => current_url,
-        "$lib" => "hedgehog"
-      },
-      timestamp: DateTime.to_iso8601(DateTime.utc_now())
-    }
+    with true <- Phoenix.LiveView.connected?(metadata.socket),
+         user when not is_nil(user) <- apply(mod, :from_view, [metadata.socket]),
+         user_id when not is_nil(user_id) <- apply(mod, :id, [user]) do
+      %__MODULE__{
+        event: "$pageview",
+        distinct_id: user_id,
+        properties: %{
+          "$current_url" => to_string(metadata.uri),
+          "$lib" => "hedgehog"
+        },
+        timestamp: DateTime.to_iso8601(DateTime.utc_now())
+      }
+    else
+      _ -> nil
+    end
   end
 end

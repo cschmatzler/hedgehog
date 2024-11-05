@@ -53,6 +53,10 @@ defmodule Hedgehog.Analytics do
     )
   end
 
+  def identify(user, metadata, opts \\ []) do
+    Task.start(fn -> Client.identify(user, metadata, opts) end)
+  end
+
   def identify_group(type, id, metadata, opts \\ []) do
     Task.start(fn -> Client.identify_group(type, id, metadata, opts) end)
   end
