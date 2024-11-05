@@ -24,12 +24,11 @@ defmodule Hedgehog.Config do
                    default: true
                  ],
                  user: [
-                   type: :atom,
-                   required: true
+                   type: :atom
                  ],
                  pageview: [
                    type: :boolean,
-                   default: true
+                   default: false
                  ],
                  batch_size: [
                    type: :pos_integer,
@@ -47,6 +46,7 @@ defmodule Hedgehog.Config do
     case NimbleOptions.validate(options, @options) do
       {:ok, validated} ->
         Agent.start_link(fn -> validated end, name: __MODULE__)
+
       {:error, error} ->
         {:error, error}
     end
