@@ -10,18 +10,18 @@ defmodule Hedgehog.Supervisor do
   @impl Supervisor
   def init(options) do
     case NimbleOptions.validate(options, Hedgehog.Config.options()) do
-      {:ok, validated} ->
+      {:ok, options} ->
         children =
-          if get_in(validated, [:analytics, :enabled]) do
-            [{Hedgehog.Config, validated}, Hedgehog.Analytics]
+          if get_in(options, [:analytics, :enabled]) do
+            [{Hedgehog.Config, options}, Hedgehog.Analytics]
           else
-            [{Hedgehog.Config, validated}]
+            [{Hedgehog.Config, options}]
           end
 
         Supervisor.init(children, strategy: :one_for_one)
 
-      {:error, error} ->
-        {:error, {:invalid_options, error}}
+      {:error, exception} ->
+        {:error, Exception.message(exception)}
     end
   end
 end

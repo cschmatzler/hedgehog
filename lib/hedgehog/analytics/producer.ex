@@ -5,59 +5,65 @@ defmodule Hedgehog.Analytics.Producer do
 
   use GenStage
 
-  def start_link(opts \\ []) do
-    GenStage.start_link(__MODULE__, opts)
-  end
-
   alias Broadway.Message
   alias Hedgehog.Analytics.Event
   alias Hedgehog.Config
 
-  @impl true
+  require Logger
+
+  def start_link(opts \\ []) do
+    GenStage.start_link(__MODULE__, opts)
+  end
+
+  @impl GenStage
   def init(_options) do
     :telemetry.attach(
       "hedgehog-analytics-producer-generic",
       [:hedgehog, :analytics, :event],
-      &__MODULE__.handle_event/4,
+      &__MODULE__.handle_telemetry_event/4,
       %{pid: self()}
     )
 
     if Config.get([:analytics, :pageview]) do
-      :telemetry.attach(
-        "hedgehog-analytics-producer-pageview",
-        [:phoenix, :live_view, :mount, :stop],
-        &__MODULE__.handle_event/4,
-        %{pid: self()}
-      )
+      if Code.ensure_loaded?(Config.get([:analytics, :user])) do
+        :telemetry.attach(
+          "hedgehog-analytics-producer-pageview",
+          [:phoenix, :live_view, :mount, :stop],
+          &__MODULE__.handle_telemetry_event/4,
+          %{pid: self()}
+        )
+      else
+        Logger.warning("Hedgehog: Tracking pageviews requires a valid user module to be configured.")
+      end
     end
 
     {:producer, %{queue: :queue.new(), demand: 0}}
   end
 
-  def handle_event([:hedgehog, :analytics, :event], _measurements, metadata, %{pid: pid}) do
+  def handle_telemetry_event([:hedgehog, :analytics, :event], _measurements, metadata, %{pid: pid}) do
     with event when not is_nil(event) <- Event.from_telemetry_event(metadata) do
       GenStage.cast(pid, {:push, event})
     end
   end
 
-  def handle_event([:phoenix, :live_view, :mount, :stop], _measurements, metadata, %{pid: pid}) do
+  def handle_telemetry_event([:phoenix, :live_view, :mount, :stop], _measurements, metadata, %{pid: pid}) do
     with event when not is_nil(event) <- Event.pageview(metadata) do
       GenStage.cast(pid, {:push, event})
     end
   end
 
-  @impl true
+  @impl GenStage
   def handle_cast({:push, event}, %{queue: queue, demand: demand} = state) when not is_nil(event) do
     queue = :queue.in(event, queue)
     dispatch_events(queue, demand, state)
   end
 
-  @impl true
+  @impl GenStage
   def handle_demand(incoming_demand, %{queue: queue, demand: demand} = state) do
     dispatch_events(queue, incoming_demand + demand, state)
   end
 
-  @impl true
+  @impl Broadway.Acknowledger
   def ack(_ack_ref, _successful, failed) do
     Enum.each(failed, &requeue_failed_message/1)
     :ok

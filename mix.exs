@@ -46,6 +46,7 @@ defmodule Hedgehog.MixProject do
   defp docs do
     [
       main: "Hedgehog",
+      formatters: ["html"],
       extras: ["CHANGELOG.md"] ++ Path.wildcard("guides/**"),
       groups_for_extras: [
         Guides: Path.wildcard("guides/**")
