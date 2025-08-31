@@ -27,7 +27,7 @@ defmodule Hedgehog.MixProject do
       {:jason, "~> 1.4"},
       {:req, "~> 0.5"},
       {:nimble_options, "~> 1.1"},
-      {:phoenix_live_view, "~> 1.0.0-rc.7"},
+      {:phoenix_live_view, "~> 1.0"},
       {:plug, "~> 1.16"},
       {:styler, "~> 1.1", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.34", only: :dev, runtime: false}
