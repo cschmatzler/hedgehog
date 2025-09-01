@@ -45,7 +45,7 @@ defmodule Hedgehog.Analytics do
     end
   end
 
-  def event(event, user_id, metadata) do
+  def event(event, user_id, metadata \\ %{}) do
     :telemetry.execute(
       [:hedgehog, :analytics, :event],
       %{},
