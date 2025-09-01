@@ -1,48 +1,26 @@
 defmodule Hedgehog.Analytics do
   @moduledoc false
 
-  use Broadway
+  use Supervisor
 
-  alias Broadway.Message
+  alias Hedgehog.Analytics.Buffer
   alias Hedgehog.Analytics.Producer
   alias Hedgehog.Client
 
   require Logger
 
   def start_link(_options) do
-    Broadway.start_link(__MODULE__,
-      name: __MODULE__,
-      producer: [
-        module: {Producer, []}
-      ],
-      processors: [
-        default: [concurrency: 50]
-      ],
-      batchers: [
-        posthog: [
-          concurrency: 5,
-          batch_size: Hedgehog.Config.get([:analytics, :batch_size]),
-          batch_timeout: Hedgehog.Config.get([:analytics, :batch_timeout])
-        ]
-      ]
-    )
+    Supervisor.start_link(__MODULE__, [], name: __MODULE__)
   end
 
-  def handle_message(_processor_name, message, _context) do
-    Message.put_batcher(message, :posthog)
-  end
+  @impl Supervisor
+  def init(_options) do
+    children = [
+      Buffer,
+      Producer
+    ]
 
-  def handle_batch(:posthog, messages, _batch_info, _context) do
-    messages
-    |> Enum.map(& &1.data)
-    |> Client.batch()
-    |> case do
-      {:ok, %{status: status}} when status in 200..299 ->
-        messages
-
-      _ ->
-        Enum.map(messages, &Broadway.Message.failed(&1, :error))
-    end
+    Supervisor.init(children, strategy: :one_for_one)
   end
 
   def event(event, user_id, metadata \\ %{}) do

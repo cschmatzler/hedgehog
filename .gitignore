@@ -26,3 +26,7 @@ hedgehog-*.tar
 /tmp/
 .aider*
 .env
+
+.devenv/
+.direnv/
+.devenv.flake.nix

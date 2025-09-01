@@ -22,8 +22,6 @@ defmodule Hedgehog.MixProject do
 
   defp deps do
     [
-      {:broadway, "~> 1.1"},
-      {:gen_stage, "~> 1.2"},
       {:jason, "~> 1.4"},
       {:req, "~> 0.5"},
       {:nimble_options, "~> 1.1"},
