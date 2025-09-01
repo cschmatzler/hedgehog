@@ -4,7 +4,6 @@ defmodule Hedgehog.Analytics do
   use Supervisor
 
   alias Hedgehog.Analytics.Buffer
-  alias Hedgehog.Analytics.Producer
   alias Hedgehog.Client
 
   require Logger
@@ -16,8 +15,7 @@ defmodule Hedgehog.Analytics do
   @impl Supervisor
   def init(_options) do
     children = [
-      Buffer,
-      Producer
+      Buffer
     ]
 
     Supervisor.init(children, strategy: :one_for_one)
